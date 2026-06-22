@@ -3,6 +3,8 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.core.files.storage import FileSystemStorage
 from ..models import Produto, Categoria, Fabricante
+import os
+from django.conf import settings
 
 
 def list_produto_view(request, id=None):
@@ -115,4 +117,30 @@ def edit_produto_postback(request, id):
 
     produto.save()
     return redirect('produto_list')
+
+
+def produto_detail_view(request, id):
+    produto = get_object_or_404(Produto, pk=id)
+    categorias = Categoria.objects.all()
+    fabricantes = Fabricante.objects.all()
+    return render(request, 'loja/produto-detail.html', {'produto': produto, 'categorias': categorias, 'fabricantes': fabricantes})
+
+
+def produto_delete_view(request, id):
+    produto = get_object_or_404(Produto, pk=id)
+    if request.method == 'POST':
+        # remove arquivo da imagem se existir
+        if produto.imagem:
+            image_path = os.path.join(settings.MEDIA_ROOT, produto.imagem.name)
+            try:
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+            except Exception:
+                pass
+        produto.delete()
+        return redirect('produto_list')
+
+    categorias = Categoria.objects.all()
+    fabricantes = Fabricante.objects.all()
+    return render(request, 'loja/produto-delete.html', {'produto': produto, 'categorias': categorias, 'fabricantes': fabricantes})
 
